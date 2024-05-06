@@ -1,20 +1,37 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Hello EtudiantController!{% endblock %}
+{% block title %}Etudiant index{% endblock %}
 
 {% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
+    <h1>Etudiant index</h1>
 
-<div class="example-wrapper">
-    <h1>Hello {{ controller_name }}! ✅</h1>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>TypeET</th>
+                <th>Specialite</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for etudiant in etudiants %}
+            <tr>
+                <td>{{ etudiant.id }}</td>
+                <td>{{ etudiant.typeET }}</td>
+                <td>{{ etudiant.specialite }}</td>
+                <td>
+                    <a href="{{ path('app_etudiant_show', {'id': etudiant.id}) }}">show</a>
+                    <a href="{{ path('app_etudiant_edit', {'id': etudiant.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="4">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
 
-    This friendly message is coming from:
-    <ul>
-        <li>Your controller at <code><a href="{{ 'C:/xampp/htdocs/project/src/Controller/EtudiantController.php'|file_link(0) }}">src/Controller/EtudiantController.php</a></code></li>
-        <li>Your template at <code><a href="{{ 'C:/xampp/htdocs/project/templates/etudiant/index.html.twig'|file_link(0) }}">templates/etudiant/index.html.twig</a></code></li>
-    </ul>
-</div>
+    <a href="{{ path('app_etudiant_new') }}">Create new</a>
 {% endblock %}
