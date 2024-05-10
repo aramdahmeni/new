@@ -4,15 +4,11 @@ namespace App\Entity;
 
 use App\Repository\AdministrateurRepository;
 use Doctrine\ORM\Mapping as ORM;
-
+#[Entity]
 #[ORM\Entity(repositoryClass: AdministrateurRepository::class)]
-class Administrateur
+class Administrateur extends User 
 {
-    #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
-
+    
     #[ORM\Column]
     private ?int $typeAD = null;
 
@@ -23,7 +19,7 @@ class Administrateur
     {
         return $this->id;
     }
-
+    
     public function getTypeAD(): ?int
     {
         return $this->typeAD;

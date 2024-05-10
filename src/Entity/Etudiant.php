@@ -5,14 +5,12 @@ namespace App\Entity;
 use App\Repository\EtudiantRepository;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: EtudiantRepository::class)]
-class Etudiant
-{
-    #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
 
+#[Entity]
+
+#[ORM\Entity(repositoryClass: EtudiantRepository::class)]
+class Etudiant extends User
+{
     #[ORM\Column]
     private ?int $typeET = null;
 
@@ -27,7 +25,7 @@ class Etudiant
     {
         return $this->id;
     }
-
+    
     public function getTypeET(): ?int
     {
         return $this->typeET;

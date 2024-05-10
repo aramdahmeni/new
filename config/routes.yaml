@@ -1,3 +1,55 @@
-#index:
-#    path: /
-#    controller: App\Controller\DefaultController::index
+#user routes
+getAllUsers:
+  path: /api/getUsers
+  controller: App\Controller\UserController::getUsers
+  methods: [GET]
+
+addNewUser:
+  path: /api/addUser
+  controller: App\Controller\UserController::addUser
+  methods: [POST] 
+  
+deleteAUser:
+  path: /api/deleteUser/{id}
+  controller: App\Controller\UserController::deleteUser
+  methods: [DELETE]
+
+editAUser:
+  path: /api/editUser/{id}
+  controller: App\Controller\UserController::editUser
+  methods: [PUT, PATCH]
+
+userByID:
+  path: /api/getUserByID/{id} 
+  controller: App\Controller\UserController::show
+  methods: [GET] 
+
+
+#classe routes
+getAllClasses:
+  path: /api/getClasses
+  controller: App\Controller\ClasseController::getClasses
+  methods: [GET]
+
+addNewClasse:
+  path: /api/addClasse
+  controller: App\Controller\ClasseController::addClasse
+  methods: [POST] 
+
+
+classeByID:
+  path: /api/getClasseByID/{id} 
+  controller: App\Controller\ClasseController::show
+  methods: [GET] 
+
+
+
+deleteAClasse:
+  path: /api/deleteClasse/{id}
+  controller: App\Controller\ClasseController::deleteClasse
+  methods: [DELETE]
+
+editAClasse:
+  path: /api/editClasse/{id}
+  controller: App\Controller\ClasseController::editClasse
+  methods: [PUT, PATCH]

@@ -10,11 +10,35 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
+
 
 #[Route('/etudiant')]
 class EtudiantController extends AbstractController
 {
-    #[Route('/', name: 'app_etudiant_index', methods: ['GET'])]
+    private $entityManager;
+    private $serializer;
+    private $validator;
+
+    public function __construct(
+        EntityManagerInterface $entityManager,
+        SerializerInterface $serializer,
+        ValidatorInterface $validator,
+        EtudiantRepository $etudiantRepository
+    ) {
+        $this->entityManager = $entityManager;
+        $this->serializer = $serializer;
+        $this->validator = $validator;
+        $this->etudiantRepository = $etudiantRepository;
+    }
+
+
+
+
+
+
     public function index(EtudiantRepository $etudiantRepository): Response
     {
         return $this->render('etudiant/index.html.twig', [

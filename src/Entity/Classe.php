@@ -38,18 +38,6 @@ class Classe
         return $this->id;
     }
 
-    public function getIdClasse(): ?int
-    {
-        return $this->idClasse;
-    }
-
-    public function setIdClasse(int $idClasse): static
-    {
-        $this->idClasse = $idClasse;
-
-        return $this;
-    }
-
     public function getNom(): ?string
     {
         return $this->nom;

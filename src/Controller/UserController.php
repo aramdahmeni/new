@@ -10,72 +10,192 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
+
+
 
 #[Route('/user')]
 class UserController extends AbstractController
 {
-    #[Route('/', name: 'app_user_index', methods: ['GET'])]
-    public function index(UserRepository $userRepository): Response
-    {
-        return $this->render('user/index.html.twig', [
-            'users' => $userRepository->findAll(),
-        ]);
-    }
+    private $entityManager;
+    private $serializer;
+    private $validator;
 
-    #[Route('/new', name: 'app_user_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
+    public function __construct(
+        EntityManagerInterface $entityManager,
+        SerializerInterface $serializer,
+        ValidatorInterface $validator,
+        UserRepository $userRepository
+    ) {
+        $this->entityManager = $entityManager;
+        $this->serializer = $serializer;
+        $this->validator = $validator;
+        $this->userRepository = $userRepository;
+    }
+    
+
+
+    
+    public function getUsers(): JsonResponse
     {
+        $users = $this->userRepository->findAll();
+        $jsonData = $this->serializer->serialize($users, 'json');
+    
+        return new JsonResponse($jsonData, Response::HTTP_OK, [], true);
+    }    
+
+
+
+
+
+    public function addUser(Request $request, EntityManagerInterface $entityManager, ValidatorInterface $validator): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+    
+        if ($data === null) {
+            return new JsonResponse([
+                'status' => 'error',
+                'message' => 'Invalid JSON data',
+            ], Response::HTTP_BAD_REQUEST);
+        }
+    
+        // creation mtaa user jdid
         $user = new User();
-        $form = $this->createForm(UserType::class, $user);
-        $form->handleRequest($request);
+        $user->setNom($data['nom'] ?? null);
+        $user->setPrenom($data['prenom'] ?? null);
+        $user->setEmail($data['email'] ?? null);
+        $user->setNumtel($data['numtel'] ?? null);
+        $user->setType($data['type'] ?? null);
+        $user->setPassword($data['password'] ?? null);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($user);
-            $entityManager->flush();
 
-            return $this->redirectToRoute('app_user_index', [], Response::HTTP_SEE_OTHER);
+
+        $errors = $validator->validate($user);
+    
+        if (count($errors) > 0) {
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorMessages[] = $error->getPropertyPath() . ': ' . $error->getMessage();
+            }
+    
+            return new JsonResponse([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $errorMessages,
+            ], Response::HTTP_BAD_REQUEST);
         }
-
-        return $this->renderForm('user/new.html.twig', [
-            'user' => $user,
-            'form' => $form,
-        ]);
+    
+        $entityManager->persist($user);
+        $entityManager->flush();
+    
+        return new JsonResponse([
+            'status' => 'success',
+            'message' => 'User added successfully',
+        ], Response::HTTP_CREATED);
     }
 
-    #[Route('/{id}', name: 'app_user_show', methods: ['GET'])]
-    public function show(User $user): Response
+
+    public function show(User $user): JsonResponse
     {
-        return $this->render('user/show.html.twig', [
-            'user' => $user,
-        ]);
+        $jsonData = $this->serializer->serialize($user, 'json');
+        
+        return new JsonResponse($jsonData, Response::HTTP_OK, [], true);
     }
 
-    #[Route('/{id}/edit', name: 'app_user_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, User $user, EntityManagerInterface $entityManager): Response
-    {
-        $form = $this->createForm(UserType::class, $user);
-        $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->flush();
 
-            return $this->redirectToRoute('app_user_index', [], Response::HTTP_SEE_OTHER);
-        }
+    public function editUser(Request $request, int $id, EntityManagerInterface $entityManager): JsonResponse
+{
+    $user = $entityManager->getRepository(User::class)->find($id);
 
-        return $this->renderForm('user/edit.html.twig', [
-            'user' => $user,
-            'form' => $form,
-        ]);
+    $data = json_decode($request->getContent(), true);
+
+    if ($data === null) {
+        return new JsonResponse([
+            'status' => 'error',
+            'message' => 'Invalid JSON data',
+        ], Response::HTTP_BAD_REQUEST);
     }
 
-    #[Route('/{id}', name: 'app_user_delete', methods: ['POST'])]
-    public function delete(Request $request, User $user, EntityManagerInterface $entityManager): Response
-    {
-        if ($this->isCsrfTokenValid('delete'.$user->getId(), $request->request->get('_token'))) {
-            $entityManager->remove($user);
-            $entityManager->flush();
+    if (isset($data['nom'])) {
+        $user->setNom($data['nom']);
+    }
+    
+    if (isset($data['prenom'])) {
+        $user->setPrenom($data['prenom']);
+    }
+    
+    if (isset($data['numtel'])) {
+        $user->setNumtel($data['numtel']);
+    }
+
+    if (isset($data['email'])) {
+        $user->setEmail($data['email']);
+    }
+
+    if (isset($data['password'])) {
+        $user->setPassword($data['password']);
+    }
+
+    if (isset($data['type'])) {
+        $user->setType($data['type']);
+    }
+
+    $errors = $validator->validate($user);
+
+    if (count($errors) > 0) {
+        $errorMessages = [];
+        foreach ($errors as $error) {
+            $errorMessages[] = $error->getPropertyPath() . ': ' . $error->getMessage();
         }
 
-        return $this->redirectToRoute('app_user_index', [], Response::HTTP_SEE_OTHER);
+        return new JsonResponse([
+            'status' => 'error',
+            'message' => 'Validation failed',
+            'errors' => $errorMessages,
+        ], Response::HTTP_BAD_REQUEST);
+    }
+
+    $entityManager->flush();
+
+    return new JsonResponse([
+        'status' => 'success',
+        'message' => 'User updated successfully',
+    ], Response::HTTP_OK);
+}
+
+
+
+
+
+
+    public function deleteUser(Request $request, int $id, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $user = $entityManager->getRepository(User::class)->find($id);
+    
+        if (!$user) {
+            return new JsonResponse([
+                'status' => 'error',
+                'message' => 'User not found',
+            ], Response::HTTP_NOT_FOUND);
+        }
+    
+        $csrfToken = $request->headers->get('X-CSRF-Token');
+        if (!$this->isCsrfTokenValid('delete'.$id, $csrfToken)) {
+            return new JsonResponse([
+                'status' => 'error',
+                'message' => 'Invalid CSRF token',
+            ], Response::HTTP_FORBIDDEN);
+        }
+    
+        $entityManager->remove($user);
+        $entityManager->flush();
+    
+        return new JsonResponse([
+            'status' => 'success',
+            'message' => 'User deleted successfully',
+        ], Response::HTTP_OK);
     }
 }

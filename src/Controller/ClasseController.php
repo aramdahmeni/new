@@ -10,72 +10,169 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 #[Route('/classe')]
 class ClasseController extends AbstractController
 {
-    #[Route('/', name: 'app_classe_index', methods: ['GET'])]
-    public function index(ClasseRepository $classeRepository): Response
+    private $entityManager;
+    private $serializer;
+    private $validator;
+
+    public function __construct(
+        EntityManagerInterface $entityManager,
+        SerializerInterface $serializer,
+        ValidatorInterface $validator,
+        ClasseRepository $classeRepository
+    ) {
+        $this->entityManager = $entityManager;
+        $this->serializer = $serializer;
+        $this->validator = $validator;
+        $this->classeRepository = $classeRepository;
+    }
+    
+
+
+
+    public function getClasses(): JsonResponse
     {
-        return $this->render('classe/index.html.twig', [
-            'classes' => $classeRepository->findAll(),
-        ]);
+        $classes = $this->classeRepository->findAll();
+        $jsonData = $this->serializer->serialize($classes, 'json');
+    
+        return new JsonResponse($jsonData, Response::HTTP_OK, [], true);
+    
     }
 
-    #[Route('/new', name: 'app_classe_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
+
+
+
+    public function addClasse(Request $request, EntityManagerInterface $entityManager, ValidatorInterface $validator): JsonResponse
     {
+        $data = json_decode($request->getContent(), true);
+    
+        if ($data === null) {
+            return new JsonResponse([
+                'status' => 'error',
+                'message' => 'Invalid JSON data',
+            ], Response::HTTP_BAD_REQUEST);
+        }
+    
+        // creation mtaa classe jdid
         $classe = new Classe();
-        $form = $this->createForm(ClasseType::class, $classe);
-        $form->handleRequest($request);
+        $classe->setNom($data['nom'] ?? null);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($classe);
-            $entityManager->flush();
 
-            return $this->redirectToRoute('app_classe_index', [], Response::HTTP_SEE_OTHER);
+        $errors = $validator->validate($classe);
+    
+        if (count($errors) > 0) {
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorMessages[] = $error->getPropertyPath() . ': ' . $error->getMessage();
+            }
+    
+            return new JsonResponse([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $errorMessages,
+            ], Response::HTTP_BAD_REQUEST);
         }
-
-        return $this->renderForm('classe/new.html.twig', [
-            'classe' => $classe,
-            'form' => $form,
-        ]);
+    
+        $entityManager->persist($classe);
+        $entityManager->flush();
+    
+        return new JsonResponse([
+            'status' => 'success',
+            'message' => 'classe added successfully',
+        ], Response::HTTP_CREATED);
     }
 
-    #[Route('/{id}', name: 'app_classe_show', methods: ['GET'])]
-    public function show(Classe $classe): Response
+
+
+
+    public function show(Classe $classe): JsonResponse
     {
-        return $this->render('classe/show.html.twig', [
-            'classe' => $classe,
-        ]);
+        $jsonData = $this->serializer->serialize($classe, 'json');
+        
+        return new JsonResponse($jsonData, Response::HTTP_OK, [], true);
     }
 
-    #[Route('/{id}/edit', name: 'app_classe_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Classe $classe, EntityManagerInterface $entityManager): Response
+
+
+
+    public function editClasse(Request $request, Classe $classe, EntityManagerInterface $entityManager): JsonResponse
     {
-        $form = $this->createForm(ClasseType::class, $classe);
-        $form->handleRequest($request);
+       
+    $classe = $entityManager->getRepository(Classe::class)->find($id);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->flush();
+    $data = json_decode($request->getContent(), true);
 
-            return $this->redirectToRoute('app_classe_index', [], Response::HTTP_SEE_OTHER);
-        }
-
-        return $this->renderForm('classe/edit.html.twig', [
-            'classe' => $classe,
-            'form' => $form,
-        ]);
+    if ($data === null) {
+        return new JsonResponse([
+            'status' => 'error',
+            'message' => 'Invalid JSON data',
+        ], Response::HTTP_BAD_REQUEST);
     }
 
-    #[Route('/{id}', name: 'app_classe_delete', methods: ['POST'])]
-    public function delete(Request $request, Classe $classe, EntityManagerInterface $entityManager): Response
-    {
-        if ($this->isCsrfTokenValid('delete'.$classe->getId(), $request->request->get('_token'))) {
-            $entityManager->remove($classe);
-            $entityManager->flush();
+    if (isset($data['nom'])) {
+        $classe->setNom($data['nom']);
+    }
+
+    $errors = $validator->validate($classe);
+
+    if (count($errors) > 0) {
+        $errorMessages = [];
+        foreach ($errors as $error) {
+            $errorMessages[] = $error->getPropertyPath() . ': ' . $error->getMessage();
         }
 
-        return $this->redirectToRoute('app_classe_index', [], Response::HTTP_SEE_OTHER);
+        return new JsonResponse([
+            'status' => 'error',
+            'message' => 'Validation failed',
+            'errors' => $errorMessages,
+        ], Response::HTTP_BAD_REQUEST);
+    }
+
+    $entityManager->flush();
+
+    return new JsonResponse([
+        'status' => 'success',
+        'message' => 'classe updated successfully',
+    ], Response::HTTP_OK);
+}
+
+
+
+
+
+
+
+    public function deleteClasse(Request $request, Classe $classe, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $classe = $entityManager->getRepository(Classe::class)->find($id);
+    
+        if (!$classe) {
+            return new JsonResponse([
+                'status' => 'error',
+                'message' => 'Classe not found',
+            ], Response::HTTP_NOT_FOUND);
+        }
+    
+        $csrfToken = $request->headers->get('X-CSRF-Token');
+        if (!$this->isCsrfTokenValid('delete'.$id, $csrfToken)) {
+            return new JsonResponse([
+                'status' => 'error',
+                'message' => 'Invalid CSRF token',
+            ], Response::HTTP_FORBIDDEN);
+        }
+    
+        $entityManager->remove($classe);
+        $entityManager->flush();
+    
+        return new JsonResponse([
+            'status' => 'success',
+            'message' => 'Classe deleted successfully',
+        ], Response::HTTP_OK);
     }
 }

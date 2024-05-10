@@ -4,13 +4,19 @@ namespace App\Entity;
 
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\UserInterface;
 
-#[ORM\Entity(repositoryClass: UserRepository::class)]
-class User
-{
-    #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
+#[Entity]
+#[InheritanceType('JOINED')]
+#[DiscriminatorColumn(name: 'discr', type: 'string')]
+#[DiscriminatorMap([
+    'user' => User::class,
+    'administrateur' => Administrateur::class,
+    'enseignant' => Enseignant::class, // Assuming Enseignant class exists
+    'etudiant' => Etudiant::class,   // Assuming Etudiant class exists
+])]
+class User implements UserInterface {
+   
     private ?int $id = null;
 
 
@@ -109,4 +115,75 @@ class User
 
         return $this;
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+      /**
+         * A visual identifier that represents this user.
+         *
+         * @see UserInterface
+         */
+        public function getUsername(): string
+        {
+                return (string) $this->username;
+        }
+
+        public function setUsername(string $username): self
+        {
+                $this->username = $username;
+
+                return $this;
+        }
+
+
+    /**
+         * @see UserInterface
+         */
+        public function getRoles(): array
+        {
+                $roles = $this->roles;
+                $roles[] = 'ROLE_USER';
+
+                return array_unique($roles);
+        }
+
+        public function setRoles(array $roles): self
+        {
+                $this->roles = $roles;
+
+                return $this;
+        }
+
+
+        /**
+         * @see UserInterface
+         */
+        public function getSalt()
+        {
+        }
+
+        /**
+         * @see UserInterface
+         */
+        public function eraseCredentials()
+        {
+        }
 }

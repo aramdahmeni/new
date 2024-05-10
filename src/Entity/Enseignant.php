@@ -7,13 +7,11 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
+#[Entity]
+
 #[ORM\Entity(repositoryClass: EnseignantRepository::class)]
-class Enseignant
+class Enseignant extends User
 {
-    #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
 
     #[ORM\Column]
     private ?int $typeENS = null;
@@ -34,7 +32,6 @@ class Enseignant
     {
         $this->idClasses = new ArrayCollection();
     }
-
     public function getId(): ?int
     {
         return $this->id;
